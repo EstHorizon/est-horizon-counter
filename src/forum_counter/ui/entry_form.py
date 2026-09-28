@@ -7,7 +7,6 @@ from PySide6.QtGui import QKeyEvent, QKeySequence
 from PySide6.QtWidgets import (
     QButtonGroup,
     QComboBox,
-    QCheckBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -61,10 +60,6 @@ class EntryForm(QGroupBox):
             self._status_buttons[status.key] = button
             status_buttons_layout.addWidget(button)
 
-        self.keep_selections_checkbox = QCheckBox(
-            "Conserver les sélections après ajout"
-        )
-
         self.fields_layout = QFormLayout()
         self.fields_layout.setFieldGrowthPolicy(
             QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
@@ -90,7 +85,6 @@ class EntryForm(QGroupBox):
         layout.addLayout(status_layout)
         layout.addLayout(self.fields_layout)
         layout.addLayout(button_layout)
-        button_layout.insertWidget(0, self.keep_selections_checkbox)
 
         self._status_changed()
 
@@ -150,7 +144,7 @@ class EntryForm(QGroupBox):
         self.setTitle("Nouvelle personne")
         self.add_button.setText("Ajouter")
         self.cancel_button.hide()
-        self._clear_current_fields()
+        self._reset_status_selection()
         self.edit_cancelled.emit()
 
     def _select_status(self, status_key: str) -> None:
@@ -317,19 +311,22 @@ class EntryForm(QGroupBox):
         self.setTitle("Nouvelle personne")
         self.add_button.setText("Ajouter")
         self.cancel_button.hide()
-        self._clear_current_fields(
-            clear_values=not self.keep_selections_checkbox.isChecked()
-        )
+        self._reset_status_selection()
 
-    def _clear_current_fields(self, clear_values: bool = True) -> None:
-        for widget in self._field_widgets.values():
-            if not clear_values:
-                continue
-            if isinstance(widget, QComboBox):
-                widget.setCurrentIndex(0)
-            elif isinstance(widget, QLineEdit):
-                widget.clear()
-        self._focus_first_input()
+    def _reset_status_selection(self) -> None:
+        """Revient à l'état initial sans profil présélectionné."""
+
+        selected_button = self._status_buttons.get(self._selected_status_key or "")
+        if selected_button is not None:
+            self._status_button_group.setExclusive(False)
+            selected_button.setChecked(False)
+            self._status_button_group.setExclusive(True)
+
+        self._selected_status_key = None
+        self._status_changed()
+        if self._status_buttons:
+            first_button = next(iter(self._status_buttons.values()))
+            QTimer.singleShot(0, first_button.setFocus)
 
     def _clear_field_rows(self) -> None:
         while self.fields_layout.rowCount() > 0:

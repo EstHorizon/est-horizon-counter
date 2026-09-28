@@ -38,7 +38,7 @@ python -m forum_counter --config chemin\vers\forum.yaml --data-dir chemin\vers\d
 - `Entrée` passe au champ suivant et enregistre depuis le dernier champ ;
 - `Ctrl+Entrée` enregistre à tout moment ;
 - les listes restent limitées aux valeurs configurées ;
-- l'option « Conserver les sélections après ajout » permet d'enchaîner des saisies similaires.
+- après un enregistrement, aucun profil n'est présélectionné pour la personne suivante.
 
 ## Fichiers
 
