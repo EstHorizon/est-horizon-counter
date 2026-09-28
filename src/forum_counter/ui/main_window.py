@@ -39,8 +39,12 @@ class MainWindow(QMainWindow):
 
         self.recent_table = QTableWidget(0, 3)
         self.recent_table.setHorizontalHeaderLabels(["Heure", "Statut", "Détails"])
-        self.recent_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.recent_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.recent_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.recent_table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
         self.recent_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.recent_table.setAlternatingRowColors(True)
         self.recent_table.verticalHeader().setVisible(False)
@@ -89,12 +93,18 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Lecture impossible", str(exc))
             participants = []
 
-        self._recent_by_id = {participant.identifier: participant for participant in participants}
+        self._recent_by_id = {
+            participant.identifier: participant for participant in participants
+        }
         self.recent_table.setRowCount(0)
         for row_index, participant in enumerate(participants):
             self.recent_table.insertRow(row_index)
-            timestamp_item = QTableWidgetItem(participant.timestamp.strftime("%d/%m %H:%M:%S"))
-            status_item = QTableWidgetItem(self.service.status_label(participant.status_key))
+            timestamp_item = QTableWidgetItem(
+                participant.timestamp.strftime("%d/%m %H:%M:%S")
+            )
+            status_item = QTableWidgetItem(
+                self.service.status_label(participant.status_key)
+            )
             details_item = QTableWidgetItem(self._details_for(participant))
             timestamp_item.setData(Qt.ItemDataRole.UserRole, participant.identifier)
             self.recent_table.setItem(row_index, 0, timestamp_item)
@@ -110,7 +120,9 @@ class MainWindow(QMainWindow):
         for field_key in status.field_keys:
             value = participant.values.get(field_key, "")
             if value:
-                details.append(f"{self.service.config.fields[field_key].label} : {value}")
+                details.append(
+                    f"{self.service.config.fields[field_key].label} : {value}"
+                )
         return " ; ".join(details)
 
     def _selected_participant(self) -> Participant | None:

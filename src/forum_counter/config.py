@@ -8,7 +8,13 @@ from typing import Any
 
 import yaml
 
-from .models import FieldDefinition, ForumConfig, StatusDefinition, clean_label, normalize_label
+from .models import (
+    FieldDefinition,
+    ForumConfig,
+    StatusDefinition,
+    clean_label,
+    normalize_label,
+)
 
 
 class ConfigurationError(ValueError):
@@ -54,7 +60,8 @@ def _load_initial_options(raw_options: Any) -> dict[str, tuple[str, ...]]:
             normalized = normalize_label(value)
             if normalized in seen:
                 raise ConfigurationError(
-                    f"Doublon dans options_initiales.{group} : « {value} ».")
+                    f"Doublon dans options_initiales.{group} : « {value} »."
+                )
             seen.add(normalized)
             values.append(value)
 
@@ -75,7 +82,9 @@ def load_config(path: Path) -> ForumConfig:
     except yaml.YAMLError as exc:
         raise ConfigurationError(f"Le fichier YAML est invalide : {exc}") from exc
     except OSError as exc:
-        raise ConfigurationError(f"Impossible de lire la configuration : {exc}") from exc
+        raise ConfigurationError(
+            f"Impossible de lire la configuration : {exc}"
+        ) from exc
 
     data = _mapping(raw_data, "Racine de la configuration")
     version = data.get("version")
@@ -101,7 +110,8 @@ def load_config(path: Path) -> ForumConfig:
         field_type = definition.get("type", "choix")
         if field_type not in {"choix", "texte"}:
             raise ConfigurationError(
-                f"champs.{key}.type doit valoir « choix » ou « texte ».")
+                f"champs.{key}.type doit valoir « choix » ou « texte »."
+            )
 
         option_group: str | None = None
         if field_type == "choix":

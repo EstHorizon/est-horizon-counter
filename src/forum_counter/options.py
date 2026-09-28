@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
 import os
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from uuid import uuid4
 
@@ -23,7 +23,9 @@ class DuplicateOptionError(OptionStoreError):
 class OptionStore:
     """Fusionne les options initiales et celles ajoutées pendant l'événement."""
 
-    def __init__(self, initial_options: Mapping[str, Iterable[str]], path: Path) -> None:
+    def __init__(
+        self, initial_options: Mapping[str, Iterable[str]], path: Path
+    ) -> None:
         self.path = path
         self._initial = {
             group: [clean_label(value) for value in values]
@@ -66,8 +68,12 @@ class OptionStore:
             raise OptionStoreError("La nouvelle option ne peut pas être vide.")
 
         normalized = normalize_label(cleaned)
-        if any(normalize_label(existing) == normalized for existing in self.values(group)):
-            raise DuplicateOptionError(f"Cette valeur existe déjà dans la liste : « {cleaned} ».")
+        if any(
+            normalize_label(existing) == normalized for existing in self.values(group)
+        ):
+            raise DuplicateOptionError(
+                f"Cette valeur existe déjà dans la liste : « {cleaned} »."
+            )
 
         self._added.setdefault(group, []).append(cleaned)
         try:
@@ -87,27 +93,37 @@ class OptionStore:
             with self.path.open("r", encoding="utf-8") as handle:
                 raw_data = yaml.safe_load(handle)
         except yaml.YAMLError as exc:
-            raise OptionStoreError(f"Le fichier des options est invalide : {exc}") from exc
+            raise OptionStoreError(
+                f"Le fichier des options est invalide : {exc}"
+            ) from exc
         except OSError as exc:
             raise OptionStoreError(f"Impossible de lire les options : {exc}") from exc
 
         if raw_data is None:
             return
         if not isinstance(raw_data, Mapping):
-            raise OptionStoreError("La racine de data/options.yaml doit être un objet YAML.")
+            raise OptionStoreError(
+                "La racine de data/options.yaml doit être un objet YAML."
+            )
         if raw_data.get("version") != 1:
             raise OptionStoreError("data/options.yaml doit utiliser la version 1.")
 
         raw_added = raw_data.get("ajouts", {})
         if not isinstance(raw_added, Mapping):
-            raise OptionStoreError("data/options.yaml: « ajouts » doit être un objet YAML.")
+            raise OptionStoreError(
+                "data/options.yaml: « ajouts » doit être un objet YAML."
+            )
 
         for raw_group, raw_values in raw_added.items():
             if not isinstance(raw_group, str) or not clean_label(raw_group):
-                raise OptionStoreError("Un groupe d'options ajouté possède un nom invalide.")
+                raise OptionStoreError(
+                    "Un groupe d'options ajouté possède un nom invalide."
+                )
             group = clean_label(raw_group)
             if not isinstance(raw_values, list):
-                raise OptionStoreError(f"data/options.yaml: « {group} » doit être une liste.")
+                raise OptionStoreError(
+                    f"data/options.yaml: « {group} » doit être une liste."
+                )
 
             values: list[str] = []
             seen: set[str] = set()
@@ -144,6 +160,8 @@ class OptionStore:
                 os.fsync(handle.fileno())
             os.replace(temporary_path, self.path)
         except OSError as exc:
-            raise OptionStoreError(f"Impossible d'enregistrer les options : {exc}") from exc
+            raise OptionStoreError(
+                f"Impossible d'enregistrer les options : {exc}"
+            ) from exc
         finally:
             temporary_path.unlink(missing_ok=True)

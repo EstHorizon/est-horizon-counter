@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 import csv
-from datetime import datetime
 import os
+from collections.abc import Iterable
+from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -68,7 +68,9 @@ class CsvParticipantRepository:
                 handle.flush()
                 os.fsync(handle.fileno())
         except (OSError, csv.Error) as exc:
-            raise RepositoryError(f"Impossible d'ajouter la personne au CSV : {exc}") from exc
+            raise RepositoryError(
+                f"Impossible d'ajouter la personne au CSV : {exc}"
+            ) from exc
         return saved
 
     def list_recent(self, limit: int = 20) -> list[Participant]:
@@ -95,7 +97,9 @@ class CsvParticipantRepository:
                 break
 
         if not found:
-            raise RepositoryError("L'enregistrement sélectionné n'existe plus dans le CSV.")
+            raise RepositoryError(
+                "L'enregistrement sélectionné n'existe plus dans le CSV."
+            )
         self._write_rows(columns, rows)
         return updated
 
@@ -103,7 +107,9 @@ class CsvParticipantRepository:
         columns, rows = self._read_rows()
         remaining = [row for row in rows if row.get(CSV_ID, "") != identifier]
         if len(remaining) == len(rows):
-            raise RepositoryError("L'enregistrement sélectionné n'existe plus dans le CSV.")
+            raise RepositoryError(
+                "L'enregistrement sélectionné n'existe plus dans le CSV."
+            )
         self._write_rows(columns, remaining)
 
     def _ensure_schema(self) -> None:
@@ -113,7 +119,9 @@ class CsvParticipantRepository:
             return
 
         columns, rows = self._read_rows_without_migration()
-        missing_required = [column for column in (CSV_TIMESTAMP, CSV_STATUS) if column not in columns]
+        missing_required = [
+            column for column in (CSV_TIMESTAMP, CSV_STATUS) if column not in columns
+        ]
         if missing_required:
             raise RepositoryError(
                 "Le CSV ne contient pas les colonnes obligatoires : "
@@ -158,7 +166,9 @@ class CsvParticipantRepository:
                 rows: list[dict[str, str]] = []
                 for row in reader:
                     if None in row:
-                        raise RepositoryError("Une ligne CSV contient trop de colonnes.")
+                        raise RepositoryError(
+                            "Une ligne CSV contient trop de colonnes."
+                        )
                     rows.append({key: value or "" for key, value in row.items()})
                 return columns, rows
         except RepositoryError:
@@ -171,7 +181,9 @@ class CsvParticipantRepository:
         participant: Participant,
         columns: Iterable[str] | None = None,
     ) -> dict[str, str]:
-        current_columns = tuple(columns) if columns is not None else tuple(self._current_columns())
+        current_columns = (
+            tuple(columns) if columns is not None else tuple(self._current_columns())
+        )
         row = {column: "" for column in current_columns}
         row[CSV_ID] = participant.identifier
         row[CSV_TIMESTAMP] = format_timestamp(participant.timestamp)
@@ -194,7 +206,9 @@ class CsvParticipantRepository:
         temporary_path = self.path.with_name(f".{self.path.name}.{uuid4().hex}.tmp")
         try:
             with temporary_path.open("w", encoding="utf-8", newline="") as handle:
-                writer = csv.DictWriter(handle, fieldnames=columns, extrasaction="ignore")
+                writer = csv.DictWriter(
+                    handle, fieldnames=columns, extrasaction="ignore"
+                )
                 writer.writeheader()
                 writer.writerows(rows)
                 handle.flush()

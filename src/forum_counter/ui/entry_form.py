@@ -42,7 +42,9 @@ class EntryForm(QGroupBox):
         self.status_combo.currentIndexChanged.connect(self._status_changed)
 
         self.fields_layout = QFormLayout()
-        self.fields_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+        self.fields_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
+        )
 
         self.add_button = QPushButton("Ajouter")
         self.add_button.setMinimumHeight(44)
@@ -80,12 +82,16 @@ class EntryForm(QGroupBox):
         """Charge une entrée dans le formulaire pour la corriger."""
 
         self._editing_participant = participant
-        index = self.status_combo.findData(participant.status_key, Qt.MatchFlag.MatchExactly)
+        index = self.status_combo.findData(
+            participant.status_key, Qt.MatchFlag.MatchExactly
+        )
         if index >= 0:
             self.status_combo.setCurrentIndex(index)
         else:
             self._editing_participant = None
-            raise ServiceError(f"Statut inconnu dans le CSV : « {participant.status_key} ».")
+            raise ServiceError(
+                f"Statut inconnu dans le CSV : « {participant.status_key} »."
+            )
 
         for field_key, widget in self._field_widgets.items():
             value = participant.values.get(field_key, "")
@@ -116,7 +122,9 @@ class EntryForm(QGroupBox):
 
         status_key = self.selected_status_key
         if status_key is None:
-            self.fields_layout.addRow(QLabel("Choisissez un statut pour afficher les champs."))
+            self.fields_layout.addRow(
+                QLabel("Choisissez un statut pour afficher les champs.")
+            )
             self._update_button_state()
             return
 

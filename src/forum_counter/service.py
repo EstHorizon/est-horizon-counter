@@ -47,7 +47,9 @@ class CounterService:
         if field is None:
             raise ServiceError(f"Champ inconnu : « {field_key} ».")
         if field.option_group is None:
-            raise ServiceError(f"Le champ « {field.label} » n'utilise pas une liste d'options.")
+            raise ServiceError(
+                f"Le champ « {field.label} » n'utilise pas une liste d'options."
+            )
         return self.options.add(field.option_group, value)
 
     def add_participant(
@@ -107,12 +109,16 @@ class CounterService:
 
             if value and field.field_type == "choix":
                 available = self.options_for_field(field_key)
-                if not any(normalize_label(option) == normalize_label(value) for option in available):
+                if not any(
+                    normalize_label(option) == normalize_label(value)
+                    for option in available
+                ):
                     raise ServiceError(
                         f"La valeur « {value} » n'existe pas dans la liste « {field.label} »."
                     )
                 value = next(
-                    option for option in available
+                    option
+                    for option in available
                     if normalize_label(option) == normalize_label(value)
                 )
             normalized_values[field_key] = value

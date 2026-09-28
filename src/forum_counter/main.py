@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -24,7 +24,9 @@ def _default_project_root() -> Path:
 
 def _parse_arguments() -> argparse.Namespace:
     project_root = _default_project_root()
-    parser = argparse.ArgumentParser(description="Enregistrer les visiteurs d'un forum.")
+    parser = argparse.ArgumentParser(
+        description="Enregistrer les visiteurs d'un forum."
+    )
     parser.add_argument(
         "--config",
         type=Path,
@@ -58,7 +60,9 @@ def main() -> int:
         )
         service = CounterService(config, option_store, repository)
     except (ConfigurationError, OptionStoreError, RepositoryError, OSError) as exc:
-        QMessageBox.critical(application.activeWindow(), "Démarrage impossible", str(exc))
+        QMessageBox.critical(
+            application.activeWindow(), "Démarrage impossible", str(exc)
+        )
         return 1
 
     window = MainWindow(service)
