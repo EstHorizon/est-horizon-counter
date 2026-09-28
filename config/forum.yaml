@@ -1,6 +1,6 @@
 champs:
   ecole:
-    label: École
+    label: Établissement
     type: choix
     groupe_options: ecoles
     obligatoire: true
@@ -25,25 +25,30 @@ statuts:
       - formation
 
   enseignant:
-    label: Enseignant
+    label: Enseignant / personnel éducatif
     champs:
       - ecole
 
   professionnel:
-    label: Professionnel
+    label: Professionnel / personne en activité
     champs:
       - domaine
 
 options_initiales:
   ecoles:
     - Mines Nancy
-    - Université de Lorraine
+    - ENSIC
+    - IUT Charlemagne
+    - IUT Brabois
+    - Arts et Métiers Metz
+    - ENSAIA
 
   formations:
-    - FICM
-    - Informatique
+    - Ingénieur
+    - Master
 
   domaines:
     - Informatique
     - Industrie
     - Conseil
+    - Recherche / laboratoire
