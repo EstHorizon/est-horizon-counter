@@ -229,7 +229,34 @@ class EntryForm(QGroupBox):
         combo.addItem("Sélectionner…", None)
         for option in self.service.options_for_field(field_key):
             combo.addItem(option, option)
+        combo.activated.connect(
+            lambda _index, widget=combo: self._open_next_field(widget)
+        )
         return combo
+
+    def _open_next_field(self, current_widget: QComboBox) -> None:
+        """Focalise le champ suivant et ouvre sa liste si nécessaire."""
+
+        if current_widget.currentIndex() == 0:
+            return
+
+        try:
+            current_index = self._input_widgets.index(current_widget)
+        except ValueError:
+            return
+
+        next_index = current_index + 1
+        if next_index >= len(self._input_widgets):
+            return
+
+        next_widget = self._input_widgets[next_index]
+
+        def focus_next_widget() -> None:
+            next_widget.setFocus()
+            if isinstance(next_widget, QComboBox):
+                next_widget.showPopup()
+
+        QTimer.singleShot(0, focus_next_widget)
 
     def _add_option(self, field_key: str) -> None:
         field = self.service.config.fields[field_key]
