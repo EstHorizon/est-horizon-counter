@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QKeySequence
+from PySide6.QtCore import QEvent, Qt, QTimer, Signal
+from PySide6.QtGui import QKeyEvent, QKeySequence
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QComboBox,
+    QCheckBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
@@ -13,6 +15,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -32,14 +35,34 @@ class EntryForm(QGroupBox):
         super().__init__("Nouvelle personne", parent)
         self.service = service
         self._field_widgets: dict[str, QWidget] = {}
+        self._input_widgets: list[QWidget] = []
         self._editing_participant: Participant | None = None
+        self._selected_status_key: str | None = None
+        self._status_buttons: dict[str, QPushButton] = {}
+        self._status_button_group = QButtonGroup(self)
+        self._status_button_group.setExclusive(True)
 
-        self.status_combo = QComboBox()
-        self.status_combo.setMinimumHeight(36)
-        self.status_combo.addItem("Sélectionner un statut…", None)
+        status_buttons_widget = QWidget()
+        status_buttons_layout = QHBoxLayout(status_buttons_widget)
+        status_buttons_layout.setContentsMargins(0, 0, 0, 0)
         for status in self.service.status_definitions():
-            self.status_combo.addItem(status.label, status.key)
-        self.status_combo.currentIndexChanged.connect(self._status_changed)
+            button = QPushButton(status.label)
+            button.setCheckable(True)
+            button.setMinimumHeight(44)
+            button.setSizePolicy(
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Fixed,
+            )
+            button.clicked.connect(
+                lambda _checked=False, key=status.key: self._select_status(key)
+            )
+            self._status_button_group.addButton(button)
+            self._status_buttons[status.key] = button
+            status_buttons_layout.addWidget(button)
+
+        self.keep_selections_checkbox = QCheckBox(
+            "Conserver les sélections après ajout"
+        )
 
         self.fields_layout = QFormLayout()
         self.fields_layout.setFieldGrowthPolicy(
@@ -62,17 +85,17 @@ class EntryForm(QGroupBox):
 
         layout = QVBoxLayout(self)
         status_layout = QFormLayout()
-        status_layout.addRow("Statut :", self.status_combo)
+        status_layout.addRow("Profil :", status_buttons_widget)
         layout.addLayout(status_layout)
         layout.addLayout(self.fields_layout)
         layout.addLayout(button_layout)
+        button_layout.insertWidget(0, self.keep_selections_checkbox)
 
         self._status_changed()
 
     @property
     def selected_status_key(self) -> str | None:
-        value = self.status_combo.currentData()
-        return value if isinstance(value, str) else None
+        return self._selected_status_key
 
     @property
     def is_editing(self) -> bool:
@@ -82,18 +105,15 @@ class EntryForm(QGroupBox):
         """Charge une entrée dans le formulaire pour la corriger."""
 
         self._editing_participant = participant
-        index = self.status_combo.findData(
-            participant.status_key,
-            Qt.ItemDataRole.UserRole,
-            Qt.MatchFlag.MatchExactly,
-        )
-        if index >= 0:
-            self.status_combo.setCurrentIndex(index)
-        else:
+        status_button = self._status_buttons.get(participant.status_key)
+        if status_button is None:
             self._editing_participant = None
             raise ServiceError(
                 f"Statut inconnu dans le CSV : « {participant.status_key} »."
             )
+        self._selected_status_key = participant.status_key
+        status_button.setChecked(True)
+        self._status_changed()
 
         for field_key, widget in self._field_widgets.items():
             value = participant.values.get(field_key, "")
@@ -130,9 +150,21 @@ class EntryForm(QGroupBox):
         self._clear_current_fields()
         self.edit_cancelled.emit()
 
+    def _select_status(self, status_key: str) -> None:
+        if status_key not in self._status_buttons:
+            return
+        if self._selected_status_key == status_key:
+            self._focus_first_input()
+            return
+
+        self._selected_status_key = status_key
+        self._status_buttons[status_key].setChecked(True)
+        self._status_changed()
+
     def _status_changed(self) -> None:
         self._clear_field_rows()
         self._field_widgets.clear()
+        self._input_widgets.clear()
 
         status_key = self.selected_status_key
         if status_key is None:
@@ -152,7 +184,9 @@ class EntryForm(QGroupBox):
                 input_widget = QLineEdit()
                 input_widget.setPlaceholderText("Saisir une valeur")
                 input_widget.setMinimumHeight(36)
+            input_widget.installEventFilter(self)
             self._field_widgets[field_key] = input_widget
+            self._input_widgets.append(input_widget)
             first_widget = first_widget or input_widget
 
             row_widget = QWidget()
@@ -163,6 +197,7 @@ class EntryForm(QGroupBox):
             if field.field_type == "choix":
                 add_option_button = QPushButton("Ajouter…")
                 add_option_button.setMinimumHeight(36)
+                add_option_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                 add_option_button.clicked.connect(
                     lambda _checked=False, key=field_key: self._add_option(key)
                 )
@@ -175,9 +210,15 @@ class EntryForm(QGroupBox):
         if first_widget is not None:
             QTimer.singleShot(0, first_widget.setFocus)
 
+    def _focus_first_input(self) -> None:
+        if self._input_widgets:
+            QTimer.singleShot(0, self._input_widgets[0].setFocus)
+
     def _create_combo(self, field_key: str) -> QComboBox:
         combo = QComboBox()
         combo.setMinimumHeight(36)
+        combo.setEditable(False)
+        combo.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         combo.addItem("Sélectionner…", None)
         for option in self.service.options_for_field(field_key):
             combo.addItem(option, option)
@@ -235,18 +276,19 @@ class EntryForm(QGroupBox):
         self.setTitle("Nouvelle personne")
         self.add_button.setText("Ajouter")
         self.cancel_button.hide()
-        self._clear_current_fields()
+        self._clear_current_fields(
+            clear_values=not self.keep_selections_checkbox.isChecked()
+        )
 
-    def _clear_current_fields(self) -> None:
-        first_widget: QWidget | None = None
+    def _clear_current_fields(self, clear_values: bool = True) -> None:
         for widget in self._field_widgets.values():
-            first_widget = first_widget or widget
+            if not clear_values:
+                continue
             if isinstance(widget, QComboBox):
                 widget.setCurrentIndex(0)
             elif isinstance(widget, QLineEdit):
                 widget.clear()
-        if first_widget is not None:
-            QTimer.singleShot(0, first_widget.setFocus)
+        self._focus_first_input()
 
     def _clear_field_rows(self) -> None:
         while self.fields_layout.rowCount() > 0:
@@ -254,3 +296,28 @@ class EntryForm(QGroupBox):
 
     def _update_button_state(self) -> None:
         self.add_button.setEnabled(self.selected_status_key is not None)
+
+    def eventFilter(self, watched: object, event: QEvent) -> bool:
+        """Gère Entrée pour avancer entre les champs ou enregistrer."""
+
+        if (
+            event.type() == QEvent.Type.KeyPress
+            and isinstance(event, QKeyEvent)
+            and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
+            and not event.modifiers()
+        ):
+            if isinstance(watched, QComboBox) and watched.view().isVisible():
+                return super().eventFilter(watched, event)
+
+            try:
+                current_index = self._input_widgets.index(watched)
+            except ValueError:
+                return super().eventFilter(watched, event)
+
+            if current_index == len(self._input_widgets) - 1:
+                self._save()
+            else:
+                self._input_widgets[current_index + 1].setFocus()
+            return True
+
+        return super().eventFilter(watched, event)

@@ -30,6 +30,16 @@ Les options suivantes permettent de choisir d'autres fichiers :
 python -m forum_counter --config chemin\vers\forum.yaml --data-dir chemin\vers\data
 ```
 
+## Saisie rapide
+
+- le statut se choisit avec un bouton direct ;
+- le premier champ est automatiquement sélectionné ;
+- `Tab` permet de passer au champ suivant ;
+- `Entrée` passe au champ suivant et enregistre depuis le dernier champ ;
+- `Ctrl+Entrée` enregistre à tout moment ;
+- les listes restent limitées aux valeurs configurées ;
+- l'option « Conserver les sélections après ajout » permet d'enchaîner des saisies similaires.
+
 ## Fichiers
 
 - `config/forum.yaml` contient la configuration initiale des statuts, champs et listes.
