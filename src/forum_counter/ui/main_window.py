@@ -166,7 +166,7 @@ class MainWindow(QMainWindow):
             "Supprimer l'enregistrement",
             "Supprimer la personne sélectionnée ? Cette action est irréversible.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
