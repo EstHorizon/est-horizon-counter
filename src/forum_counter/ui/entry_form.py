@@ -113,7 +113,7 @@ class EntryForm(QGroupBox):
             )
         self._selected_status_key = participant.status_key
         status_button.setChecked(True)
-        self._status_changed()
+        self._status_changed(open_first_popup=False)
 
         for field_key, widget in self._field_widgets.items():
             value = participant.values.get(field_key, "")
@@ -154,14 +154,14 @@ class EntryForm(QGroupBox):
         if status_key not in self._status_buttons:
             return
         if self._selected_status_key == status_key:
-            self._focus_first_input()
+            self._focus_first_input(open_popup=True)
             return
 
         self._selected_status_key = status_key
         self._status_buttons[status_key].setChecked(True)
-        self._status_changed()
+        self._status_changed(open_first_popup=True)
 
-    def _status_changed(self) -> None:
+    def _status_changed(self, open_first_popup: bool = False) -> None:
         self._clear_field_rows()
         self._field_widgets.clear()
         self._input_widgets.clear()
@@ -208,11 +208,18 @@ class EntryForm(QGroupBox):
 
         self._update_button_state()
         if first_widget is not None:
-            QTimer.singleShot(0, first_widget.setFocus)
+            self._focus_first_input(open_popup=open_first_popup)
 
-    def _focus_first_input(self) -> None:
+    def _focus_first_input(self, open_popup: bool = False) -> None:
         if self._input_widgets:
-            QTimer.singleShot(0, self._input_widgets[0].setFocus)
+            first_widget = self._input_widgets[0]
+
+            def focus_first_widget() -> None:
+                first_widget.setFocus()
+                if open_popup and isinstance(first_widget, QComboBox):
+                    first_widget.showPopup()
+
+            QTimer.singleShot(0, focus_first_widget)
 
     def _create_combo(self, field_key: str) -> QComboBox:
         combo = QComboBox()
