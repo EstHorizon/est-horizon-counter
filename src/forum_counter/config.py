@@ -87,10 +87,6 @@ def load_config(path: Path) -> ForumConfig:
         ) from exc
 
     data = _mapping(raw_data, "Racine de la configuration")
-    version = data.get("version")
-    if version != 1:
-        raise ConfigurationError("La configuration doit utiliser la version 1.")
-
     initial_options = _load_initial_options(data.get("options_initiales"))
 
     raw_fields = _mapping(data.get("champs"), "champs")

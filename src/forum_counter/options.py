@@ -105,9 +105,6 @@ class OptionStore:
             raise OptionStoreError(
                 "La racine de data/options.yaml doit être un objet YAML."
             )
-        if raw_data.get("version") != 1:
-            raise OptionStoreError("data/options.yaml doit utiliser la version 1.")
-
         raw_added = raw_data.get("ajouts", {})
         if not isinstance(raw_added, Mapping):
             raise OptionStoreError(
@@ -143,7 +140,6 @@ class OptionStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary_path = self.path.with_name(f".{self.path.name}.{uuid4().hex}.tmp")
         payload = {
-            "version": 1,
             "ajouts": {group: values for group, values in self._added.items()},
         }
 

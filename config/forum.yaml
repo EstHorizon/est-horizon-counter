@@ -1,5 +1,3 @@
-version: 1
-
 champs:
   ecole:
     label: École
