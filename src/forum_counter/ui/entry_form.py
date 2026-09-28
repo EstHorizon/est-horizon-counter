@@ -38,6 +38,7 @@ class EntryForm(QGroupBox):
         self._input_widgets: list[QWidget] = []
         self._editing_participant: Participant | None = None
         self._selected_status_key: str | None = None
+        self._auto_open_next_fields = True
         self._status_buttons: dict[str, QPushButton] = {}
         self._status_button_group = QButtonGroup(self)
         self._status_button_group.setExclusive(True)
@@ -105,6 +106,7 @@ class EntryForm(QGroupBox):
         """Charge une entrée dans le formulaire pour la corriger."""
 
         self._editing_participant = participant
+        self._auto_open_next_fields = False
         status_button = self._status_buttons.get(participant.status_key)
         if status_button is None:
             self._editing_participant = None
@@ -144,6 +146,7 @@ class EntryForm(QGroupBox):
 
     def cancel_edit(self) -> None:
         self._editing_participant = None
+        self._auto_open_next_fields = True
         self.setTitle("Nouvelle personne")
         self.add_button.setText("Ajouter")
         self.cancel_button.hide()
@@ -154,10 +157,11 @@ class EntryForm(QGroupBox):
         if status_key not in self._status_buttons:
             return
         if self._selected_status_key == status_key:
-            self._focus_first_input(open_popup=True)
+            self._focus_first_input(open_popup=self._auto_open_next_fields)
             return
 
         self._selected_status_key = status_key
+        self._auto_open_next_fields = True
         self._status_buttons[status_key].setChecked(True)
         self._status_changed(open_first_popup=True)
 
@@ -237,6 +241,8 @@ class EntryForm(QGroupBox):
     def _open_next_field(self, current_widget: QComboBox) -> None:
         """Focalise le champ suivant et ouvre sa liste si nécessaire."""
 
+        if not self._auto_open_next_fields:
+            return
         if current_widget.currentIndex() == 0:
             return
 
@@ -307,6 +313,7 @@ class EntryForm(QGroupBox):
 
     def _clear_after_save(self) -> None:
         self._editing_participant = None
+        self._auto_open_next_fields = True
         self.setTitle("Nouvelle personne")
         self.add_button.setText("Ajouter")
         self.cancel_button.hide()
