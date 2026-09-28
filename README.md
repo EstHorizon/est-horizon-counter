@@ -12,20 +12,22 @@ python -m pip install -e .
 
 ## Lancement
 
-```powershell
-forum-counter
-```
-
-Après installation, l'application peut aussi être lancée avec :
+Depuis la racine du projet, après l'installation :
 
 ```powershell
 python -m forum_counter
 ```
 
+`pip install -e .` crée aussi la commande raccourcie `forum-counter`, définie dans `pyproject.toml`. Elle est facultative :
+
+```powershell
+forum-counter
+```
+
 Les options suivantes permettent de choisir d'autres fichiers :
 
 ```powershell
-forum-counter --config chemin\vers\forum.yaml --data-dir chemin\vers\data
+python -m forum_counter --config chemin\vers\forum.yaml --data-dir chemin\vers\data
 ```
 
 ## Fichiers
