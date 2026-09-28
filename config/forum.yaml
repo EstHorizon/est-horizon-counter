@@ -1,0 +1,51 @@
+version: 1
+
+champs:
+  ecole:
+    label: École
+    type: choix
+    groupe_options: ecoles
+    obligatoire: true
+
+  formation:
+    label: Formation
+    type: choix
+    groupe_options: formations
+    obligatoire: true
+
+  domaine:
+    label: Domaine d'activité
+    type: choix
+    groupe_options: domaines
+    obligatoire: true
+
+statuts:
+  etudiant:
+    label: Étudiant
+    champs:
+      - ecole
+      - formation
+
+  enseignant:
+    label: Enseignant
+    champs:
+      - ecole
+
+  professionnel:
+    label: Professionnel
+    champs:
+      - domaine
+
+options_initiales:
+  ecoles:
+    - Mines Nancy
+    - Université de Lorraine
+
+  formations:
+    - FICM
+    - Informatique
+
+  domaines:
+    - Informatique
+    - Industrie
+    - Conseil

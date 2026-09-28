@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+
+# Données produites pendant les événements
+data/participants.csv
+data/options.yaml
