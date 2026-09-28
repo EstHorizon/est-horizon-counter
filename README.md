@@ -1,7 +1,5 @@
 # Forum Counter
 
-Petite application desktop PySide6 pour enregistrer rapidement les visiteurs d'un forum dans un fichier CSV.
-
 ## Installation
 
 Depuis la racine du projet :
