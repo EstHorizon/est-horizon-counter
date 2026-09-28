@@ -83,7 +83,9 @@ class EntryForm(QGroupBox):
 
         self._editing_participant = participant
         index = self.status_combo.findData(
-            participant.status_key, Qt.MatchFlag.MatchExactly
+            participant.status_key,
+            Qt.ItemDataRole.UserRole,
+            Qt.MatchFlag.MatchExactly,
         )
         if index >= 0:
             self.status_combo.setCurrentIndex(index)
@@ -96,9 +98,21 @@ class EntryForm(QGroupBox):
         for field_key, widget in self._field_widgets.items():
             value = participant.values.get(field_key, "")
             if isinstance(widget, QComboBox):
-                if value and widget.findData(value, Qt.MatchFlag.MatchExactly) < 0:
+                if (
+                    value
+                    and widget.findData(
+                        value,
+                        Qt.ItemDataRole.UserRole,
+                        Qt.MatchFlag.MatchExactly,
+                    )
+                    < 0
+                ):
                     widget.addItem(value, value)
-                index = widget.findData(value, Qt.MatchFlag.MatchExactly)
+                index = widget.findData(
+                    value,
+                    Qt.ItemDataRole.UserRole,
+                    Qt.MatchFlag.MatchExactly,
+                )
                 widget.setCurrentIndex(index if index >= 0 else 0)
             elif isinstance(widget, QLineEdit):
                 widget.setText(value)
