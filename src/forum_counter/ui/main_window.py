@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QGroupBox,
@@ -54,6 +55,13 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         self.recent_table.itemSelectionChanged.connect(self._update_action_buttons)
         self.recent_table.cellDoubleClicked.connect(self._edit_selected)
+
+        self.delete_shortcut = QShortcut(
+            QKeySequence("Delete"),
+            self.recent_table,
+        )
+        self.delete_shortcut.setContext(Qt.ShortcutContext.WidgetShortcut)
+        self.delete_shortcut.activated.connect(self._delete_selected)
 
         self.edit_button = QPushButton("Modifier")
         self.edit_button.clicked.connect(self._edit_selected)
