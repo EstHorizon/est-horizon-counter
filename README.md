@@ -44,7 +44,7 @@ Pour une personne en activité, le type choisi détermine les champs suivants :
 
 - établissement d'enseignement supérieur : établissement ;
 - entreprise : domaine d'activité ;
-- service public, association ou organisme, laboratoire ou centre de recherche : aucun champ supplémentaire.
+- service public, association ou organisme, laboratoire ou centre de recherche, recherche d'emploi : aucun champ supplémentaire.
 
 ## Fichiers
 
