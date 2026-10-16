@@ -125,7 +125,10 @@ class MainWindow(QMainWindow):
             return "; ".join(value for value in participant.values.values() if value)
 
         details: list[str] = []
-        for field_key in status.field_keys:
+        for field_key in self.service.field_keys_for(
+            participant.status_key,
+            participant.values,
+        ):
             value = participant.values.get(field_key, "")
             if value:
                 details.append(

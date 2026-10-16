@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 from PySide6.QtCore import QEvent, Qt, QTimer, Signal
 from PySide6.QtGui import QKeyEvent, QKeySequence
 from PySide6.QtWidgets import (
@@ -99,41 +101,25 @@ class EntryForm(QGroupBox):
     def load_participant(self, participant: Participant) -> None:
         """Charge une entrée dans le formulaire pour la corriger."""
 
+        participant = self.service.participant_for_edit(participant)
         self._editing_participant = participant
         self._auto_open_next_fields = False
         status_button = self._status_buttons.get(participant.status_key)
-        if status_button is None:
+        if participant.status_key not in self.service.config.statuses:
             self._editing_participant = None
             raise ServiceError(
                 f"Statut inconnu dans le CSV : « {participant.status_key} »."
             )
         self._selected_status_key = participant.status_key
-        status_button.setChecked(True)
-        self._status_changed(open_first_popup=False)
+        if status_button is not None:
+            status_button.setChecked(True)
+        self._status_changed(
+            open_first_popup=False,
+            field_values=participant.values,
+        )
 
-        for field_key, widget in self._field_widgets.items():
-            value = participant.values.get(field_key, "")
-            if isinstance(widget, QComboBox):
-                if (
-                    value
-                    and widget.findData(
-                        value,
-                        Qt.ItemDataRole.UserRole,
-                        Qt.MatchFlag.MatchExactly,
-                    )
-                    < 0
-                ):
-                    widget.addItem(value, value)
-                index = widget.findData(
-                    value,
-                    Qt.ItemDataRole.UserRole,
-                    Qt.MatchFlag.MatchExactly,
-                )
-                widget.setCurrentIndex(index if index >= 0 else 0)
-            elif isinstance(widget, QLineEdit):
-                widget.setText(value)
-
-        self.setTitle("Correction d'une personne")
+        status = self.service.config.statuses[participant.status_key]
+        self.setTitle(f"Correction : {status.label}")
         self.add_button.setText("Enregistrer la correction")
         self.cancel_button.show()
         self._update_button_state()
@@ -159,10 +145,15 @@ class EntryForm(QGroupBox):
         self._status_buttons[status_key].setChecked(True)
         self._status_changed(open_first_popup=True)
 
-    def _status_changed(self, open_first_popup: bool = False) -> None:
+    def _status_changed(
+        self,
+        open_first_popup: bool = False,
+        field_values: Mapping[str, str] | None = None,
+    ) -> None:
         self._clear_field_rows()
         self._field_widgets.clear()
         self._input_widgets.clear()
+        self._visible_field_keys: list[str] = []
 
         status_key = self.selected_status_key
         if status_key is None:
@@ -172,16 +163,33 @@ class EntryForm(QGroupBox):
             self._update_button_state()
             return
 
-        status = self.service.config.statuses[status_key]
+        values = field_values or {}
+        self._visible_field_keys = list(
+            self.service.field_keys_for(status_key, values)
+        )
         first_widget: QWidget | None = None
-        for field_key in status.field_keys:
+        for field_key in self._visible_field_keys:
             field = self.service.config.fields[field_key]
             if field.field_type == "choix":
                 input_widget = self._create_combo(field_key)
+                value = values.get(field_key, "")
+                if value and input_widget.findData(
+                    value,
+                    Qt.ItemDataRole.UserRole,
+                    Qt.MatchFlag.MatchExactly,
+                ) < 0:
+                    input_widget.addItem(value, value)
+                index = input_widget.findData(
+                    value,
+                    Qt.ItemDataRole.UserRole,
+                    Qt.MatchFlag.MatchExactly,
+                )
+                input_widget.setCurrentIndex(index if index >= 0 else 0)
             else:
                 input_widget = QLineEdit()
                 input_widget.setPlaceholderText("Saisir une valeur")
                 input_widget.setMinimumHeight(36)
+                input_widget.setText(values.get(field_key, ""))
             input_widget.installEventFilter(self)
             self._field_widgets[field_key] = input_widget
             self._input_widgets.append(input_widget)
@@ -228,32 +236,60 @@ class EntryForm(QGroupBox):
         for option in self.service.options_for_field(field_key):
             combo.addItem(option, option)
         combo.activated.connect(
-            lambda _index, widget=combo: self._open_next_field(widget)
+            lambda _index, key=field_key, widget=combo: self._field_selected(
+                key,
+                widget,
+            )
         )
         return combo
 
-    def _open_next_field(self, current_widget: QComboBox) -> None:
-        """Focalise le champ suivant et ouvre sa liste si nécessaire."""
+    def _field_selected(self, field_key: str, combo: QComboBox) -> None:
+        """Met à jour les champs conditionnels et avance dans le formulaire."""
 
-        if not self._auto_open_next_fields:
-            return
-        if current_widget.currentIndex() == 0:
+        if combo.currentIndex() == 0:
             return
 
+        values = self._current_values()
+        visible_field_keys = self.service.field_keys_for(
+            self.selected_status_key or "",
+            values,
+        )
+        if tuple(self._visible_field_keys) != visible_field_keys:
+            QTimer.singleShot(
+                0,
+                lambda saved_values=values: self._rebuild_after_condition(
+                    field_key,
+                    saved_values,
+                ),
+            )
+            return
+
+        self._focus_next_field(field_key)
+
+    def _rebuild_after_condition(
+        self,
+        field_key: str,
+        values: Mapping[str, str],
+    ) -> None:
+        self._status_changed(field_values=values)
+        self._focus_next_field(field_key)
+
+    def _focus_next_field(self, field_key: str) -> None:
         try:
-            current_index = self._input_widgets.index(current_widget)
+            current_index = self._visible_field_keys.index(field_key)
         except ValueError:
             return
 
         next_index = current_index + 1
-        if next_index >= len(self._input_widgets):
+        if next_index >= len(self._visible_field_keys):
             return
 
-        next_widget = self._input_widgets[next_index]
+        next_field_key = self._visible_field_keys[next_index]
+        next_widget = self._field_widgets[next_field_key]
 
         def focus_next_widget() -> None:
             next_widget.setFocus()
-            if isinstance(next_widget, QComboBox):
+            if self._auto_open_next_fields and isinstance(next_widget, QComboBox):
                 next_widget.showPopup()
 
         QTimer.singleShot(0, focus_next_widget)

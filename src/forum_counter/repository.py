@@ -138,7 +138,10 @@ class CsvParticipantRepository:
         new_columns = list(columns)
         for column in missing_columns:
             if column not in new_columns:
-                new_columns.append(column)
+                if column != CSV_ID and CSV_ID in new_columns:
+                    new_columns.insert(new_columns.index(CSV_ID), column)
+                else:
+                    new_columns.append(column)
 
         for row in rows:
             if CSV_ID not in columns:

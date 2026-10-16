@@ -17,6 +17,12 @@ champs:
     groupe_options: domaines
     obligatoire: true
 
+  type_activite:
+    label: Type d'activité
+    type: choix
+    groupe_options: types_activite
+    obligatoire: true
+
 statuts:
   etudiant:
     label: Étudiant
@@ -28,11 +34,29 @@ statuts:
     label: Enseignant / personnel éducatif
     champs:
       - ecole
+    afficher: false
+    remplacement:
+      statut: activite
+      valeurs:
+        type_activite: Établissement d’enseignement supérieur
 
   professionnel:
     label: Professionnel / personne en activité
     champs:
       - domaine
+    afficher: false
+
+  activite:
+    label: Personne en activité
+    champs:
+      - type_activite
+    condition:
+      champ: type_activite
+      valeurs:
+        Établissement d’enseignement supérieur:
+          - ecole
+        Entreprise:
+          - domaine
 
 options_initiales:
   ecoles:
@@ -44,11 +68,46 @@ options_initiales:
     - ENSAIA
 
   formations:
-    - Ingénieur
+    - Ecole d'ingénieur
+    - Ecole de mangement et de commerce
     - Master
+    - IUT
+    - CPGE
+    - Licence
 
   domaines:
-    - Informatique
+    - Aéronautique
+    - Aérospatial
+    - Agroalimentaire
+    - Assurance
+    - Automobile
+    - Banque
+    - BTP
+    - Bureautique
+    - Chimie
+    - Conseil et Audit
+    - Cosmétique - Pharmaceutique
+    - Création d'entreprise
+    - Défense
+    - Distribution
+    - Electronique
+    - Energie
+    - Finance
     - Industrie
-    - Conseil
-    - Recherche / laboratoire
+    - Informatique
+    - Logistique / Transport
+    - Luxe
+    - Organisme
+    - Partenaire media
+    - Recherche
+    - Recrutement
+    - Sécurité
+    - Services
+    - Télécommunication
+
+  types_activite:
+    - Service public
+    - Association ou organisme
+    - Laboratoire ou centre de recherche
+    - Établissement d’enseignement supérieur
+    - Entreprise

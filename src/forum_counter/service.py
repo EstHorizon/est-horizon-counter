@@ -5,7 +5,13 @@ from __future__ import annotations
 from collections.abc import Mapping
 from datetime import datetime
 
-from .models import ForumConfig, Participant, clean_label, normalize_label
+from .models import (
+    ForumConfig,
+    Participant,
+    StatusDefinition,
+    clean_label,
+    normalize_label,
+)
 from .options import OptionStore
 from .repository import CsvParticipantRepository
 
@@ -27,8 +33,10 @@ class CounterService:
         self.options = options
         self.repository = repository
 
-    def status_definitions(self):
-        return tuple(self.config.statuses.values())
+    def status_definitions(self) -> tuple[StatusDefinition, ...]:
+        return tuple(
+            status for status in self.config.statuses.values() if status.visible
+        )
 
     def status_label(self, status_key: str) -> str:
         status = self.config.statuses.get(status_key)
@@ -86,6 +94,44 @@ class CounterService:
     def delete_participant(self, identifier: str) -> None:
         self.repository.delete(identifier)
 
+    def participant_for_edit(self, participant: Participant) -> Participant:
+        """Prépare une ancienne entrée selon sa règle de remplacement éventuelle."""
+
+        status = self.config.statuses.get(participant.status_key)
+        if status is None or status.replacement_status_key is None:
+            return participant
+
+        values = dict(participant.values)
+        values.update(status.replacement_values)
+        return Participant(
+            identifier=participant.identifier,
+            timestamp=participant.timestamp,
+            status_key=status.replacement_status_key,
+            values=values,
+        )
+
+    def field_keys_for(
+        self,
+        status_key: str,
+        values: Mapping[str, str],
+    ) -> tuple[str, ...]:
+        """Retourne les champs de base et ceux activés par une condition."""
+
+        status = self.config.statuses.get(status_key)
+        if status is None:
+            return ()
+
+        field_keys = list(status.field_keys)
+        if status.condition_field_key is not None:
+            selected_value = normalize_label(
+                values.get(status.condition_field_key, "")
+            )
+            for option_value, conditional_keys in status.conditional_fields.items():
+                if normalize_label(option_value) == selected_value:
+                    field_keys.extend(conditional_keys)
+                    break
+        return tuple(field_keys)
+
     def _build_participant(
         self,
         identifier: str,
@@ -98,7 +144,7 @@ class CounterService:
             raise ServiceError("Veuillez sélectionner un statut.")
 
         normalized_values = {field_key: "" for field_key in self.config.fields}
-        for field_key in status.field_keys:
+        for field_key in self.field_keys_for(status_key, values):
             field = self.config.fields[field_key]
             raw_value = values.get(field_key, "")
             if not isinstance(raw_value, str):

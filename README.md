@@ -40,6 +40,12 @@ python -m forum_counter --config chemin\vers\forum.yaml --data-dir chemin\vers\d
 - les listes restent limitées aux valeurs configurées ;
 - après un enregistrement, aucun profil n'est présélectionné pour la personne suivante.
 
+Pour une personne en activité, le type choisi détermine les champs suivants :
+
+- établissement d'enseignement supérieur : établissement ;
+- entreprise : domaine d'activité ;
+- service public, association ou organisme, laboratoire ou centre de recherche : aucun champ supplémentaire.
+
 ## Fichiers
 
 - `config/forum.yaml` contient la configuration initiale des statuts, champs et listes.
