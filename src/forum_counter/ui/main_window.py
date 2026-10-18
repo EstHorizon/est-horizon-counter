@@ -39,7 +39,9 @@ class MainWindow(QMainWindow):
         self.entry_form.edit_cancelled.connect(self._update_action_buttons)
 
         self.recent_table = QTableWidget(0, 3)
-        self.recent_table.setHorizontalHeaderLabels(["Heure", "Statut", "Détails"])
+        self.recent_table.setHorizontalHeaderLabels(
+            ["Date et heure", "Profil", "Détails"]
+        )
         self.recent_table.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectRows
         )
@@ -48,11 +50,34 @@ class MainWindow(QMainWindow):
         )
         self.recent_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.recent_table.setAlternatingRowColors(True)
-        self.recent_table.verticalHeader().setVisible(False)
+        self.recent_table.setShowGrid(False)
+        self.recent_table.setWordWrap(True)
+        self.recent_table.setTextElideMode(Qt.TextElideMode.ElideNone)
+        vertical_header = self.recent_table.verticalHeader()
+        vertical_header.setVisible(False)
+        vertical_header.setDefaultSectionSize(44)
+        vertical_header.setMinimumSectionSize(40)
+        vertical_header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         header = self.recent_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        header.setMinimumSectionSize(115)
+        header.setFixedHeight(38)
+        self.recent_table.setStyleSheet(
+            """
+            QTableWidget {
+                font-size: 10pt;
+            }
+            QTableWidget::item {
+                padding: 6px 8px;
+            }
+            QHeaderView::section {
+                padding: 7px 8px;
+                font-weight: 600;
+            }
+            """
+        )
         self.recent_table.itemSelectionChanged.connect(self._update_action_buttons)
         self.recent_table.cellDoubleClicked.connect(self._edit_selected)
 
@@ -118,6 +143,19 @@ class MainWindow(QMainWindow):
             self.recent_table.setItem(row_index, 0, timestamp_item)
             self.recent_table.setItem(row_index, 1, status_item)
             self.recent_table.setItem(row_index, 2, details_item)
+            timestamp_item.setTextAlignment(
+                Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+            )
+            status_item.setTextAlignment(
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+            )
+            status_font = status_item.font()
+            status_font.setBold(True)
+            status_item.setFont(status_font)
+            details_item.setTextAlignment(
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+            )
+        self.recent_table.resizeRowsToContents()
 
     def _details_for(self, participant: Participant) -> str:
         status = self.service.config.statuses.get(participant.status_key)
@@ -131,10 +169,15 @@ class MainWindow(QMainWindow):
         ):
             value = participant.values.get(field_key, "")
             if value:
-                details.append(
-                    f"{self.service.config.fields[field_key].label} : {value}"
+                label = (
+                    "Source"
+                    if field_key == "source_forum"
+                    else self.service.config.fields[field_key].label
                 )
-        return " ; ".join(details)
+                details.append(
+                    f"{label} : {value}"
+                )
+        return "   •   ".join(details)
 
     def _selected_participant(self) -> Participant | None:
         selected_rows = self.recent_table.selectionModel().selectedRows()
