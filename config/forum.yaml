@@ -11,6 +11,12 @@ champs:
     groupe_options: formations
     obligatoire: true
 
+  niveau_etude:
+    label: Niveau d'études
+    type: choix
+    groupe_options: niveaux_etude
+    obligatoire: true
+
   domaine:
     label: Domaine d'activité
     type: choix
@@ -29,6 +35,7 @@ statuts:
     champs:
       - ecole
       - formation
+      - niveau_etude
 
   activite:
     label: Situation professionnelle
@@ -50,6 +57,7 @@ options_initiales:
     - IUT Brabois
     - Arts et Métiers Metz
     - ENSAIA
+    - Lycée
 
   formations:
     - Ecole d'ingénieur
@@ -58,6 +66,15 @@ options_initiales:
     - IUT
     - CPGE
     - Licence
+    - Baccalauréat
+
+  niveaux_etude:
+    - Bac ou moins
+    - Bac +1
+    - Bac +2
+    - Bac +3
+    - Bac +4
+    - Bac +5
 
   domaines:
     - Aéronautique

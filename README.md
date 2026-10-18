@@ -46,6 +46,8 @@ Pour une personne ayant sélectionné « Situation professionnelle », la situat
 - entreprise : domaine d'activité ;
 - service public, association ou organisme, laboratoire ou centre de recherche, recherche d'emploi : aucun champ supplémentaire.
 
+Pour un étudiant, le formulaire demande l'établissement, la formation et le niveau d'études (de « Bac ou moins » à « Bac +5 »).
+
 ## Fichiers
 
 - `config/forum.yaml` contient la configuration initiale des statuts, champs et listes.
