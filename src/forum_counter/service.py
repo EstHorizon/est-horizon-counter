@@ -34,9 +34,7 @@ class CounterService:
         self.repository = repository
 
     def status_definitions(self) -> tuple[StatusDefinition, ...]:
-        return tuple(
-            status for status in self.config.statuses.values() if status.visible
-        )
+        return tuple(self.config.statuses.values())
 
     def status_label(self, status_key: str) -> str:
         status = self.config.statuses.get(status_key)
@@ -93,22 +91,6 @@ class CounterService:
 
     def delete_participant(self, identifier: str) -> None:
         self.repository.delete(identifier)
-
-    def participant_for_edit(self, participant: Participant) -> Participant:
-        """Prépare une ancienne entrée selon sa règle de remplacement éventuelle."""
-
-        status = self.config.statuses.get(participant.status_key)
-        if status is None or status.replacement_status_key is None:
-            return participant
-
-        values = dict(participant.values)
-        values.update(status.replacement_values)
-        return Participant(
-            identifier=participant.identifier,
-            timestamp=participant.timestamp,
-            status_key=status.replacement_status_key,
-            values=values,
-        )
 
     def field_keys_for(
         self,

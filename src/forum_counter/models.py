@@ -38,11 +38,8 @@ class StatusDefinition:
     key: str
     label: str
     field_keys: tuple[str, ...]
-    visible: bool = True
     condition_field_key: str | None = None
     conditional_fields: dict[str, tuple[str, ...]] = field(default_factory=dict)
-    replacement_status_key: str | None = None
-    replacement_values: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

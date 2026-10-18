@@ -40,7 +40,7 @@ python -m forum_counter --config chemin\vers\forum.yaml --data-dir chemin\vers\d
 - les listes restent limitées aux valeurs configurées ;
 - après un enregistrement, aucun profil n'est présélectionné pour la personne suivante.
 
-Pour une personne en activité, le type choisi détermine les champs suivants :
+Pour une personne ayant sélectionné « Situation professionnelle », la situation choisie détermine les champs suivants :
 
 - établissement d'enseignement supérieur : établissement ;
 - entreprise : domaine d'activité ;

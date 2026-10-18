@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -139,7 +138,6 @@ def load_config(path: Path) -> ForumConfig:
         raise ConfigurationError("La configuration doit définir au moins un statut.")
 
     statuses: dict[str, StatusDefinition] = {}
-    raw_replacements: dict[str, Mapping[str, Any]] = {}
     for raw_key, raw_definition in raw_statuses.items():
         key = _non_empty_string(raw_key, "Clé de statut")
         if key in statuses:
@@ -170,11 +168,6 @@ def load_config(path: Path) -> ForumConfig:
                 )
             seen_fields.add(field_key)
             field_keys.append(field_key)
-
-        visible = _boolean(
-            definition.get("afficher", True),
-            f"statuts.{key}.afficher",
-        )
 
         condition_field_key: str | None = None
         conditional_fields: dict[str, tuple[str, ...]] = {}
@@ -236,61 +229,12 @@ def load_config(path: Path) -> ForumConfig:
                     conditional_keys.append(conditional_key)
                 conditional_fields[value] = tuple(conditional_keys)
 
-        raw_replacement = definition.get("remplacement")
-        if raw_replacement is not None:
-            raw_replacements[key] = _mapping(
-                raw_replacement,
-                f"statuts.{key}.remplacement",
-            )
-
         statuses[key] = StatusDefinition(
             key=key,
             label=label,
             field_keys=tuple(field_keys),
-            visible=visible,
             condition_field_key=condition_field_key,
             conditional_fields=conditional_fields,
-        )
-
-    for old_key, replacement in raw_replacements.items():
-        target_key = _non_empty_string(
-            replacement.get("statut"),
-            f"statuts.{old_key}.remplacement.statut",
-        )
-        if target_key not in statuses or not statuses[target_key].visible:
-            raise ConfigurationError(
-                f"Le statut de remplacement « {target_key} » de « {old_key} » "
-                "n'existe pas ou n'est pas affiché."
-            )
-
-        raw_values = _mapping(
-            replacement.get("valeurs", {}),
-            f"statuts.{old_key}.remplacement.valeurs",
-        )
-        replacement_values: dict[str, str] = {}
-        target_status = statuses[target_key]
-        target_field_keys = set(target_status.field_keys)
-        for conditional_keys in target_status.conditional_fields.values():
-            target_field_keys.update(conditional_keys)
-        for raw_field_key, raw_value in raw_values.items():
-            field_key = _non_empty_string(
-                raw_field_key,
-                f"statuts.{old_key}.remplacement.valeurs (champ)",
-            )
-            if field_key not in target_field_keys:
-                raise ConfigurationError(
-                    f"Le champ « {field_key} » n'est pas utilisé par le statut "
-                    f"de remplacement « {target_key} »."
-                )
-            replacement_values[field_key] = _non_empty_string(
-                raw_value,
-                f"statuts.{old_key}.remplacement.valeurs.{field_key}",
-            )
-
-        statuses[old_key] = replace(
-            statuses[old_key],
-            replacement_status_key=target_key,
-            replacement_values=replacement_values,
         )
 
     return ForumConfig(

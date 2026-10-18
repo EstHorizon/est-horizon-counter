@@ -18,7 +18,7 @@ champs:
     obligatoire: true
 
   type_activite:
-    label: Type d'activité
+    label: Votre situation
     type: choix
     groupe_options: types_activite
     obligatoire: true
@@ -30,24 +30,8 @@ statuts:
       - ecole
       - formation
 
-  enseignant:
-    label: Enseignant / personnel éducatif
-    champs:
-      - ecole
-    afficher: false
-    remplacement:
-      statut: activite
-      valeurs:
-        type_activite: Établissement d’enseignement supérieur
-
-  professionnel:
-    label: Professionnel / personne en activité
-    champs:
-      - domaine
-    afficher: false
-
   activite:
-    label: Personne en activité
+    label: Situation professionnelle
     champs:
       - type_activite
     condition:

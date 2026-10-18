@@ -101,7 +101,6 @@ class EntryForm(QGroupBox):
     def load_participant(self, participant: Participant) -> None:
         """Charge une entrée dans le formulaire pour la corriger."""
 
-        participant = self.service.participant_for_edit(participant)
         self._editing_participant = participant
         self._auto_open_next_fields = False
         status_button = self._status_buttons.get(participant.status_key)
