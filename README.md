@@ -48,6 +48,8 @@ Pour une personne ayant sélectionné « Situation professionnelle », la situat
 
 Pour un étudiant, le formulaire demande l'établissement, la formation et le niveau d'études (de « Bac ou moins » à « Bac +5 »).
 
+Tous les profils se terminent par la question « Comment avez-vous connu le Forum EST HORIZON ? », avec des choix comme e-mail, presse, emploi du temps, affichage, réseaux sociaux, bouche-à-oreille, groupe de promo, site internet ou établissement/enseignant.
+
 ## Fichiers
 
 - `config/forum.yaml` contient la configuration initiale des statuts, champs et listes.

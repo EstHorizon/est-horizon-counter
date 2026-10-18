@@ -133,6 +133,26 @@ def load_config(path: Path) -> ForumConfig:
             required=required,
         )
 
+    raw_common_fields = data.get("champs_communs", [])
+    if not isinstance(raw_common_fields, list):
+        raise ConfigurationError("champs_communs doit être une liste de champs.")
+
+    common_field_keys: list[str] = []
+    for index, raw_field_key in enumerate(raw_common_fields):
+        field_key = _non_empty_string(
+            raw_field_key,
+            f"champs_communs[{index}]",
+        )
+        if field_key not in fields:
+            raise ConfigurationError(
+                f"Le champ commun « {field_key} » n'existe pas dans champs."
+            )
+        if field_key in common_field_keys:
+            raise ConfigurationError(
+                f"Le champ commun « {field_key} » apparaît plusieurs fois."
+            )
+        common_field_keys.append(field_key)
+
     raw_statuses = _mapping(data.get("statuts"), "statuts")
     if not raw_statuses:
         raise ConfigurationError("La configuration doit définir au moins un statut.")
@@ -229,6 +249,17 @@ def load_config(path: Path) -> ForumConfig:
                     conditional_keys.append(conditional_key)
                 conditional_fields[value] = tuple(conditional_keys)
 
+        used_field_keys = set(field_keys)
+        for conditional_keys in conditional_fields.values():
+            used_field_keys.update(conditional_keys)
+        duplicated_common_fields = used_field_keys.intersection(common_field_keys)
+        if duplicated_common_fields:
+            field_key = sorted(duplicated_common_fields)[0]
+            raise ConfigurationError(
+                f"Le champ commun « {field_key} » ne doit pas être également "
+                f"déclaré dans statuts.{key}."
+            )
+
         statuses[key] = StatusDefinition(
             key=key,
             label=label,
@@ -241,4 +272,5 @@ def load_config(path: Path) -> ForumConfig:
         fields=fields,
         statuses=statuses,
         initial_options=initial_options,
+        common_field_keys=tuple(common_field_keys),
     )

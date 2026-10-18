@@ -104,14 +104,18 @@ class CounterService:
             return ()
 
         field_keys = list(status.field_keys)
+        condition_selected = status.condition_field_key is None
         if status.condition_field_key is not None:
             selected_value = normalize_label(
                 values.get(status.condition_field_key, "")
             )
+            condition_selected = bool(selected_value)
             for option_value, conditional_keys in status.conditional_fields.items():
                 if normalize_label(option_value) == selected_value:
                     field_keys.extend(conditional_keys)
                     break
+        if condition_selected:
+            field_keys.extend(self.config.common_field_keys)
         return tuple(field_keys)
 
     def _build_participant(

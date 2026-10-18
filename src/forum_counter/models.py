@@ -49,6 +49,7 @@ class ForumConfig:
     fields: dict[str, FieldDefinition]
     statuses: dict[str, StatusDefinition]
     initial_options: dict[str, tuple[str, ...]]
+    common_field_keys: tuple[str, ...] = ()
 
 
 @dataclass

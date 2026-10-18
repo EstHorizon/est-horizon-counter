@@ -29,6 +29,12 @@ champs:
     groupe_options: types_activite
     obligatoire: true
 
+  source_forum:
+    label: Comment avez-vous connu le Forum Est-Horizon ?
+    type: choix
+    groupe_options: sources_forum
+    obligatoire: true
+
 statuts:
   etudiant:
     label: Étudiant
@@ -48,6 +54,9 @@ statuts:
           - ecole
         Entreprise:
           - domaine
+
+champs_communs:
+  - source_forum
 
 options_initiales:
   ecoles:
@@ -113,3 +122,14 @@ options_initiales:
     - Établissement d’enseignement supérieur
     - Entreprise
     - En recherche d'emploi
+
+  sources_forum:
+    - E-mail / newsletter
+    - Actualité / presse
+    - Emploi du temps
+    - Affiche ou publicité
+    - Réseaux sociaux
+    - Bouche-à-oreille
+    - Groupe de promo
+    - Site internet
+    - Établissement / enseignant
