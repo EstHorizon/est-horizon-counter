@@ -19,6 +19,7 @@ class RepositoryError(RuntimeError):
 CSV_ID = "id"
 CSV_TIMESTAMP = "timestamp"
 CSV_STATUS = "statut"
+CSV_PEOPLE_COUNT = "nombre_personnes"
 TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
@@ -36,6 +37,24 @@ def parse_timestamp(value: str) -> datetime:
             raise RepositoryError(f"Timestamp CSV invalide : « {value} ».") from exc
 
 
+def parse_people_count(value: str) -> int:
+    """Lit le nombre de personnes, avec 1 pour les anciennes lignes."""
+
+    if not value.strip():
+        return 1
+    try:
+        people_count = int(value)
+    except ValueError as exc:
+        raise RepositoryError(
+            f"Nombre de personnes CSV invalide : « {value} »."
+        ) from exc
+    if people_count < 1:
+        raise RepositoryError(
+            f"Nombre de personnes CSV invalide : « {value} »."
+        )
+    return people_count
+
+
 class CsvParticipantRepository:
     """Stocke les participants dans un fichier CSV local."""
 
@@ -46,7 +65,13 @@ class CsvParticipantRepository:
 
     @property
     def columns(self) -> tuple[str, ...]:
-        return (CSV_TIMESTAMP, CSV_STATUS, *self.field_keys, CSV_ID)
+        return (
+            CSV_TIMESTAMP,
+            CSV_STATUS,
+            CSV_PEOPLE_COUNT,
+            *self.field_keys,
+            CSV_ID,
+        )
 
     def append(self, participant: Participant) -> Participant:
         """Ajoute une ligne et retourne le participant avec son identifiant."""
@@ -57,6 +82,7 @@ class CsvParticipantRepository:
             timestamp=participant.timestamp,
             status_key=participant.status_key,
             values=dict(participant.values),
+            people_count=participant.people_count,
         )
 
         try:
@@ -88,6 +114,7 @@ class CsvParticipantRepository:
             timestamp=participant.timestamp,
             status_key=participant.status_key,
             values=dict(participant.values),
+            people_count=participant.people_count,
         )
 
         for row in rows:
@@ -132,13 +159,18 @@ class CsvParticipantRepository:
         if CSV_ID not in columns:
             missing_columns.insert(0, CSV_ID)
 
-        if not missing_columns:
+        has_missing_people_count = any(
+            not row.get(CSV_PEOPLE_COUNT, "").strip() for row in rows
+        )
+        if not missing_columns and not has_missing_people_count:
             return
 
         new_columns = list(columns)
         for column in missing_columns:
             if column not in new_columns:
-                if column != CSV_ID and CSV_ID in new_columns:
+                if column == CSV_PEOPLE_COUNT:
+                    new_columns.insert(new_columns.index(CSV_STATUS) + 1, column)
+                elif column != CSV_ID and CSV_ID in new_columns:
                     new_columns.insert(new_columns.index(CSV_ID), column)
                 else:
                     new_columns.append(column)
@@ -146,6 +178,8 @@ class CsvParticipantRepository:
         for row in rows:
             if CSV_ID not in columns:
                 row[CSV_ID] = uuid4().hex
+            if not row.get(CSV_PEOPLE_COUNT, "").strip():
+                row[CSV_PEOPLE_COUNT] = "1"
             for column in self.field_keys:
                 row.setdefault(column, "")
 
@@ -191,6 +225,7 @@ class CsvParticipantRepository:
         row[CSV_ID] = participant.identifier
         row[CSV_TIMESTAMP] = format_timestamp(participant.timestamp)
         row[CSV_STATUS] = participant.status_key
+        row[CSV_PEOPLE_COUNT] = str(participant.people_count)
         for field_key in self.field_keys:
             if field_key in row:
                 row[field_key] = participant.values.get(field_key, "")
@@ -202,6 +237,7 @@ class CsvParticipantRepository:
             timestamp=parse_timestamp(row.get(CSV_TIMESTAMP, "")),
             status_key=row.get(CSV_STATUS, ""),
             values={key: row.get(key, "") for key in self.field_keys},
+            people_count=parse_people_count(row.get(CSV_PEOPLE_COUNT, "")),
         )
 
     def _write_rows(self, columns: list[str], rows: list[dict[str, str]]) -> None:

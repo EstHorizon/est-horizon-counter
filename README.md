@@ -38,7 +38,8 @@ python -m forum_counter --config chemin\vers\forum.yaml --data-dir chemin\vers\d
 - `Entrée` passe au champ suivant et enregistre depuis le dernier champ ;
 - `Ctrl+Entrée` enregistre à tout moment ;
 - les listes restent limitées aux valeurs configurées ;
-- après un enregistrement, aucun profil n'est présélectionné pour la personne suivante.
+- le compteur « Nombre de personnes » vaut 1 par défaut et permet d'enregistrer un groupe ;
+- après un ajout, le profil et les choix sont conservés, tandis que le compteur revient à 1.
 
 Pour une personne ayant sélectionné « Situation professionnelle », la situation choisie détermine les champs suivants :
 
@@ -54,7 +55,7 @@ Tous les profils se terminent par la question « Comment avez-vous connu le Foru
 
 - `config/forum.yaml` contient la configuration initiale des statuts, champs et listes.
 - `data/options.yaml` contient les options ajoutées depuis l'application.
-- `data/participants.csv` contient les personnes enregistrées.
+- `data/participants.csv` contient les personnes enregistrées, avec une colonne `nombre_personnes`.
 
 L'application ne modifie pas le fichier YAML initial. Les valeurs ajoutées sont persistées dans `data/options.yaml`.
 

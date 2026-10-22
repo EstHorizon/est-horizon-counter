@@ -60,3 +60,4 @@ class Participant:
     timestamp: datetime
     status_key: str
     values: dict[str, str] = field(default_factory=dict)
+    people_count: int = 1

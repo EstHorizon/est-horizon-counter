@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QSizePolicy,
+    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -67,6 +68,24 @@ class EntryForm(QGroupBox):
             QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
         )
 
+        self.people_count_spinbox = QSpinBox()
+        self.people_count_spinbox.setRange(1, 999_999)
+        self.people_count_spinbox.setValue(1)
+        self.people_count_spinbox.setMinimumHeight(36)
+        self.people_count_spinbox.setMinimumWidth(100)
+        self.people_count_spinbox.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.people_count_spinbox.setToolTip(
+            "Indiquez le nombre de personnes pour une entrée de groupe."
+        )
+        self.people_count_spinbox.installEventFilter(self)
+        self.people_count_spinbox.lineEdit().installEventFilter(self)
+
+        people_count_layout = QFormLayout()
+        people_count_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.FieldsStayAtSizeHint
+        )
+        people_count_layout.addRow("Nombre de personnes :", self.people_count_spinbox)
+
         self.add_button = QPushButton("Ajouter")
         self.add_button.setMinimumHeight(44)
         self.add_button.setDefault(True)
@@ -86,6 +105,7 @@ class EntryForm(QGroupBox):
         status_layout.addRow("Profil :", status_buttons_widget)
         layout.addLayout(status_layout)
         layout.addLayout(self.fields_layout)
+        layout.addLayout(people_count_layout)
         layout.addLayout(button_layout)
 
         self._status_changed()
@@ -109,6 +129,7 @@ class EntryForm(QGroupBox):
             raise ServiceError(
                 f"Statut inconnu dans le CSV : « {participant.status_key} »."
             )
+        self.people_count_spinbox.setValue(participant.people_count)
         self._selected_status_key = participant.status_key
         if status_button is not None:
             status_button.setChecked(True)
@@ -129,6 +150,7 @@ class EntryForm(QGroupBox):
         self.setTitle("Nouvelle personne")
         self.add_button.setText("Ajouter")
         self.cancel_button.hide()
+        self.people_count_spinbox.setValue(1)
         self._reset_status_selection()
         self.edit_cancelled.emit()
 
@@ -211,6 +233,7 @@ class EntryForm(QGroupBox):
             label = field.label + (" *" if field.required else "")
             self.fields_layout.addRow(f"{label} :", row_widget)
 
+        self._input_widgets.append(self.people_count_spinbox)
         self._update_button_state()
         if first_widget is not None:
             self._focus_first_input(open_popup=open_first_popup)
@@ -281,6 +304,7 @@ class EntryForm(QGroupBox):
 
         next_index = current_index + 1
         if next_index >= len(self._visible_field_keys):
+            QTimer.singleShot(0, self.people_count_spinbox.setFocus)
             return
 
         next_field_key = self._visible_field_keys[next_index]
@@ -315,14 +339,20 @@ class EntryForm(QGroupBox):
         status_key = self.selected_status_key
         values = self._current_values()
         is_editing = self._editing_participant is not None
+        people_count = self.people_count_spinbox.value()
         try:
             if not is_editing:
-                participant = self.service.add_participant(status_key or "", values)
+                participant = self.service.add_participant(
+                    status_key or "",
+                    values,
+                    people_count=people_count,
+                )
             else:
                 participant = self.service.update_participant(
                     self._editing_participant,
                     status_key or "",
                     values,
+                    people_count=people_count,
                 )
         except (ServiceError, RuntimeError) as exc:
             QMessageBox.warning(self, "Enregistrement impossible", str(exc))
@@ -332,6 +362,7 @@ class EntryForm(QGroupBox):
         if is_editing:
             self._clear_after_save()
         else:
+            self.people_count_spinbox.setValue(1)
             self.add_button.setFocus()
 
     def _current_values(self) -> dict[str, str]:
@@ -350,6 +381,7 @@ class EntryForm(QGroupBox):
         self.setTitle("Nouvelle personne")
         self.add_button.setText("Ajouter")
         self.cancel_button.hide()
+        self.people_count_spinbox.setValue(1)
         self._reset_status_selection()
 
     def _reset_status_selection(self) -> None:
@@ -386,8 +418,13 @@ class EntryForm(QGroupBox):
             if isinstance(watched, QComboBox) and watched.view().isVisible():
                 return super().eventFilter(watched, event)
 
+            input_widget = (
+                self.people_count_spinbox
+                if watched is self.people_count_spinbox.lineEdit()
+                else watched
+            )
             try:
-                current_index = self._input_widgets.index(watched)
+                current_index = self._input_widgets.index(input_widget)
             except ValueError:
                 return super().eventFilter(watched, event)
 

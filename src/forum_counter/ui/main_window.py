@@ -32,15 +32,15 @@ class MainWindow(QMainWindow):
         self._recent_by_id: dict[str, Participant] = {}
 
         self.setWindowTitle("Compteur de visiteurs")
-        self.resize(900, 700)
+        self.resize(1_000, 700)
 
         self.entry_form = EntryForm(service)
         self.entry_form.saved.connect(self._entry_saved)
         self.entry_form.edit_cancelled.connect(self._update_action_buttons)
 
-        self.recent_table = QTableWidget(0, 3)
+        self.recent_table = QTableWidget(0, 4)
         self.recent_table.setHorizontalHeaderLabels(
-            ["Date et heure", "Profil", "Détails"]
+            ["Date et heure", "Profil", "Personnes", "Détails"]
         )
         self.recent_table.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectRows
@@ -79,7 +79,8 @@ class MainWindow(QMainWindow):
         header = self.recent_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         header.setMinimumSectionSize(115)
         header.setFixedHeight(38)
         self.recent_table.setStyleSheet(
@@ -133,8 +134,14 @@ class MainWindow(QMainWindow):
 
     def _entry_saved(self, participant: Participant) -> None:
         self._refresh_recent(participant.identifier)
+        people_label = (
+            "personne enregistrée"
+            if participant.people_count == 1
+            else "personnes enregistrées"
+        )
         self.statusBar().showMessage(
-            f"Enregistrement ajouté à {participant.timestamp.strftime('%H:%M:%S')}."
+            f"{participant.people_count} {people_label} à "
+            f"{participant.timestamp.strftime('%H:%M:%S')}."
         )
 
     def _refresh_recent(self, select_identifier: str | None = None) -> None:
@@ -160,11 +167,13 @@ class MainWindow(QMainWindow):
             status_item = QTableWidgetItem(
                 self.service.status_label(participant.status_key)
             )
+            people_count_item = QTableWidgetItem(str(participant.people_count))
             details_item = QTableWidgetItem(self._details_for(participant))
             timestamp_item.setData(Qt.ItemDataRole.UserRole, participant.identifier)
             self.recent_table.setItem(row_index, 0, timestamp_item)
             self.recent_table.setItem(row_index, 1, status_item)
-            self.recent_table.setItem(row_index, 2, details_item)
+            self.recent_table.setItem(row_index, 2, people_count_item)
+            self.recent_table.setItem(row_index, 3, details_item)
             timestamp_item.setTextAlignment(
                 Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
             )
@@ -174,6 +183,9 @@ class MainWindow(QMainWindow):
             status_font = status_item.font()
             status_font.setBold(True)
             status_item.setFont(status_font)
+            people_count_item.setTextAlignment(
+                Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter
+            )
             details_item.setTextAlignment(
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
             )

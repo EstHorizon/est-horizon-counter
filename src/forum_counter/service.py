@@ -63,12 +63,14 @@ class CounterService:
         status_key: str,
         values: Mapping[str, str],
         timestamp: datetime | None = None,
+        people_count: int = 1,
     ) -> Participant:
         participant = self._build_participant(
             identifier="",
             timestamp=timestamp or datetime.now(),
             status_key=status_key,
             values=values,
+            people_count=people_count,
         )
         return self.repository.append(participant)
 
@@ -77,12 +79,14 @@ class CounterService:
         existing: Participant,
         status_key: str,
         values: Mapping[str, str],
+        people_count: int = 1,
     ) -> Participant:
         participant = self._build_participant(
             identifier=existing.identifier,
             timestamp=existing.timestamp,
             status_key=status_key,
             values=values,
+            people_count=people_count,
         )
         return self.repository.update(existing.identifier, participant)
 
@@ -124,10 +128,19 @@ class CounterService:
         timestamp: datetime,
         status_key: str,
         values: Mapping[str, str],
+        people_count: int,
     ) -> Participant:
         status = self.config.statuses.get(status_key)
         if status is None:
             raise ServiceError("Veuillez sélectionner un statut.")
+        if (
+            isinstance(people_count, bool)
+            or not isinstance(people_count, int)
+            or people_count < 1
+        ):
+            raise ServiceError(
+                "Le nombre de personnes doit être un entier supérieur ou égal à 1."
+            )
 
         normalized_values = {field_key: "" for field_key in self.config.fields}
         for field_key in self.field_keys_for(status_key, values):
@@ -160,4 +173,5 @@ class CounterService:
             timestamp=timestamp,
             status_key=status_key,
             values=normalized_values,
+            people_count=people_count,
         )
