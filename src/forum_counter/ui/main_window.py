@@ -120,6 +120,10 @@ class MainWindow(QMainWindow):
         )
 
     def _refresh_recent(self) -> None:
+        selected_participant = self._selected_participant()
+        selected_identifier = (
+            selected_participant.identifier if selected_participant is not None else None
+        )
         try:
             participants = self.service.recent_participants(20)
         except RuntimeError as exc:
@@ -155,6 +159,9 @@ class MainWindow(QMainWindow):
             details_item.setTextAlignment(
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
             )
+            if participant.identifier == selected_identifier:
+                self.recent_table.setCurrentCell(row_index, 0)
+                self.recent_table.selectRow(row_index)
         self.recent_table.resizeRowsToContents()
 
     def _details_for(self, participant: Participant) -> str:
