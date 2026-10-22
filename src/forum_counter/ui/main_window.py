@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtGui import QKeySequence, QPalette, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QGroupBox,
@@ -48,6 +48,24 @@ class MainWindow(QMainWindow):
         self.recent_table.setSelectionMode(
             QAbstractItemView.SelectionMode.SingleSelection
         )
+        table_palette = self.recent_table.palette()
+        table_palette.setColor(
+            QPalette.ColorGroup.Inactive,
+            QPalette.ColorRole.Highlight,
+            table_palette.color(
+                QPalette.ColorGroup.Active,
+                QPalette.ColorRole.Highlight,
+            ),
+        )
+        table_palette.setColor(
+            QPalette.ColorGroup.Inactive,
+            QPalette.ColorRole.HighlightedText,
+            table_palette.color(
+                QPalette.ColorGroup.Active,
+                QPalette.ColorRole.HighlightedText,
+            ),
+        )
+        self.recent_table.setPalette(table_palette)
         self.recent_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.recent_table.setAlternatingRowColors(True)
         self.recent_table.setShowGrid(False)
@@ -114,14 +132,14 @@ class MainWindow(QMainWindow):
         self._update_action_buttons()
 
     def _entry_saved(self, participant: Participant) -> None:
-        self._refresh_recent()
+        self._refresh_recent(participant.identifier)
         self.statusBar().showMessage(
             f"Enregistrement ajouté à {participant.timestamp.strftime('%H:%M:%S')}."
         )
 
-    def _refresh_recent(self) -> None:
+    def _refresh_recent(self, select_identifier: str | None = None) -> None:
         selected_participant = self._selected_participant()
-        selected_identifier = (
+        selected_identifier = select_identifier or (
             selected_participant.identifier if selected_participant is not None else None
         )
         try:
@@ -159,10 +177,22 @@ class MainWindow(QMainWindow):
             details_item.setTextAlignment(
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
             )
-            if participant.identifier == selected_identifier:
-                self.recent_table.setCurrentCell(row_index, 0)
-                self.recent_table.selectRow(row_index)
         self.recent_table.resizeRowsToContents()
+        if selected_identifier is not None:
+            for row_index in range(self.recent_table.rowCount()):
+                timestamp_item = self.recent_table.item(row_index, 0)
+                if (
+                    timestamp_item is not None
+                    and timestamp_item.data(Qt.ItemDataRole.UserRole)
+                    == selected_identifier
+                ):
+                    self.recent_table.setCurrentCell(row_index, 0)
+                    self.recent_table.selectRow(row_index)
+                    self.recent_table.scrollToItem(
+                        timestamp_item,
+                        QAbstractItemView.ScrollHint.PositionAtCenter,
+                    )
+                    break
 
     def _details_for(self, participant: Participant) -> str:
         status = self.service.config.statuses.get(participant.status_key)

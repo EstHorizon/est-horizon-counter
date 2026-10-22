@@ -314,8 +314,9 @@ class EntryForm(QGroupBox):
     def _save(self) -> None:
         status_key = self.selected_status_key
         values = self._current_values()
+        is_editing = self._editing_participant is not None
         try:
-            if self._editing_participant is None:
+            if not is_editing:
                 participant = self.service.add_participant(status_key or "", values)
             else:
                 participant = self.service.update_participant(
@@ -328,7 +329,10 @@ class EntryForm(QGroupBox):
             return
 
         self.saved.emit(participant)
-        self._clear_after_save()
+        if is_editing:
+            self._clear_after_save()
+        else:
+            self.add_button.setFocus()
 
     def _current_values(self) -> dict[str, str]:
         values: dict[str, str] = {}
